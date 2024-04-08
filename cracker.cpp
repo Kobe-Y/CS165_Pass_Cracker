@@ -1,26 +1,51 @@
-#include <unistd.h>
-#include <cstring>
 #include <iostream>
+#include <cstdio>
+#include <cstring>
+
+std::string generatePasswordHash(const std::string& password, const std::string& salt) {
+    std::string command = "openssl passwd -1 -salt " + salt + " " + password;
+    FILE* pipe = popen(command.c_str(), "r");
+    if (!pipe) {
+        std::cerr << "Error: popen failed!" << std::endl;
+        return "";
+    }
+    char buffer[128];
+    std::string result = "";
+    while (!feof(pipe)) {
+        if (fgets(buffer, 128, pipe) != nullptr)
+            result += buffer;
+    }
+    pclose(pipe);
+    // Remove trailing newline character from the result
+    if (!result.empty() && result[result.length() - 1] == '\n') {
+        result.erase(result.length() - 1);
+    }
+    return result;
+}
 
 int main () {
-    //team0:$1$ZvtfRmCz$M5j8uQCHnt9twgU./nyRJ0:16653:0:99999:7:::
-    std::string hashed_password = "wPwz7GC6xLt9eQZ9eJkaq."; //compare with
+    std::string hashed_password = "$1$hfT7jp2q$wPwz7GC6xLt9eQZ9eJkaq."; //compare with
     //alg goes here
     //while (hash != hashed_password) 
 
         std::string pass = "zhgnnd"; //brute force pass
-        std::string salt = "$1$hfT7jp2q$";
-        for(int i =0; i < 10000; i++) {
-            char* hash = crypt(pass.c_str(), salt.c_str());
-            if (std::string(hash) == hashed_password) {
-                std::cout << "Password found: " << pass << std::endl;
+        std::string salt = "hfT7jp2q";
+        std::string input = salt+pass;
+
+        std::string hash = generatePasswordHash(pass, salt);
+        for(int i = 0; i < hashed_password.length(); ++i)
+        {
+            if(hashed_password[i] != hash[i])
+            {
+                std::cout << "NOT IT" << std::endl;
                 break;
             }
-            else {
-                std::cout << hash << std::endl;
+            else if (i == hashed_password.length()-1)
+            {
+                std::cout << "MATCH" << std::endl;
             }
         }
-        //comparrison hash with hashed_password
+        std::cout << "Generated: \n" << hash << std::endl;
+        std::cout << "Expected: \n" << hashed_password << std::endl;
 
-    //std::cout << hash;
 }
